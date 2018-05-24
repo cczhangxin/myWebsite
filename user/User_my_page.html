@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <link rel="stylesheet" href="bootstrap-3.3.7-dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="bootstrap-select-1.12.4/css/bootstrap-select.min.css">
+  <style>
+    body {
+      background: #F2F2F2;
+    }
+
+    #header {
+      height: 80px;
+      background: #273238;
+      color: #fff;
+      padding: 10px 20px 0 20px;
+    }
+
+    #section {
+      margin: 20px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 3px;
+      border-top: 3px solid #3c8dbc;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    }
+
+    #nav-tab .add_user_btn {
+      float: right;
+    }
+
+    .tab-content {
+      margin-top: 20px;
+    }
+
+    #nav-tab {
+      list-style: none;
+      padding-left: 0;
+      height: 22px;
+    }
+
+    #nav-tab li {
+      float: left;
+      margin-right: 40px;
+    }
+
+    #nav-tab li a {
+      color: #676767;
+    }
+
+    #nav-tab .active a {
+      font-weight: bold;
+      color: #000;
+    }
+
+    #header .pull-right {
+      margin: 26px 20px 0 0;
+    }
+
+    #header .pull-right a {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header id="header">
+    <div class="pull-left"><h3>ANTIY 威胁分析系统</h3></div>
+    <div class="pull-right"><span><i class="fa fa-user fa-lg"></i> 管理员/admin</span>&nbsp;&nbsp;&nbsp;<a href="#">退出</a>
+    </div>
+  </header>
+  <section id="section">
+    <div class="row">
+      <div class="col-md-4" v-show="show_user_model">
+        <div class="panel panel-primary">
+          <div v-show="is_add_user" class="panel-heading">新建用户</div>
+          <div v-show="is_set_user" class="panel-heading">{{ role }}/{{ name }}</div>
+          <div class="panel-body form-horizontal">
+            <div class="form-group" v-show="is_add_user">
+              <label class="col-md-3 control-label">用户</label>
+              <div class="col-md-9">
+                <input class="form-control" type="text" placeholder="输入用于登录的用户名" v-model="user_name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-md-3 control-label">密码</label>
+              <div class="col-md-9">
+                <input class="form-control" type="text" placeholder="输入新密码" v-model="user_password">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-md-3 control-label">角色</label>
+              <div class="col-md-9">
+                <select class="selectpicker" data-width="fit" v-model="selected">
+                  <option v-for="option in options" v-bind:value="option.value">
+                    {{option.text}}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <hr>
+            <div class="form-group">
+              <label class="col-md-3 control-label">备注</label>
+              <div class="col-md-9">
+                <textarea class="form-control" placeholder="在这里添加备注" v-model="remarks"></textarea>
+              </div>
+            </div>
+            <hr>
+            <div class="form-group">
+              <label class="col-md-3 control-label">姓名</label>
+              <div class="col-md-9">
+                <input class="form-control" type="text" v-model="name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-md-3 control-label">部门</label>
+              <div class="col-md-9">
+                <input class="form-control" type="text" v-model="department">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-md-3 control-label">Email</label>
+              <div class="col-md-9">
+                <input class="form-control" type="text" v-model="email">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-md-3 control-label">手机</label>
+              <div class="col-md-9">
+                <input class="form-control" type="text" v-model="phone_number">
+              </div>
+            </div>
+            <hr>
+            <div v-show="is_add_user">
+              <div class="text-danger" style="margin: 10px">{{ add_user_hint }}</div>
+              <button class="btn btn-sm btn-info" @click="submit_user_info()"><i class="fa fa-save fa-lg"></i> 建立
+              </button>
+              <button class="btn btn-sm btn-warning" @click="user_model_switch()"><i class="fa fa-times fa-lg"></i> 关闭
+              </button>
+            </div>
+            <div v-show="is_set_user">
+              <div class="text-danger" style="margin: 10px"></div>
+              <button class="btn btn-sm btn-primary" @click="submit_user_info('set')"><i class="fa fa-save fa-lg"></i>
+                保存
+              </button>
+              <button class="btn btn-sm btn-danger" @click="delete_user()"><i class="fa fa-trash-o fa-lg"></i> 删除</button>
+              <button class="btn btn-sm btn-warning" @click="user_model_switch()"><i class="fa fa-times fa-lg"></i> 关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-bind:class="class_name">
+        <ul id="nav-tab">
+          <li class="active">
+            <a href="#" @click="selected='operator',switch_user('all')">全部</a>
+          </li>
+          <li>
+            <a href="#" @click="selected='admin',switch_user('admin')">管理员</a>
+          </li>
+          <li>
+            <a href="#" @click="selected='auditor',switch_user('auditor')">审计员</a>
+          </li>
+          <li>
+            <a href="#" @click="selected='operator',switch_user('operator')">操作员</a>
+          </li>
+          <li class="add_user_btn">
+            <button class="btn btn-sm btn-primary" @click="user_model_switch()">
+              新建
+            </button>
+          </li>
+        </ul>
+        <hr style="border-top: 2px solid #CBCBCB">
+        <table class="table table-hover">
+          <thead>
+          <tr>
+            <th>姓名</th>
+            <th>账号</th>
+            <th>角色</th>
+            <th>部门</th>
+            <th>Email</th>
+            <th>手机</th>
+            <th>备注</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="user in body" @click="set_user(user)" style="cursor: pointer;">
+            <td>{{user.name}}</td>
+            <td>{{user.user_name}}</td>
+            <td>{{en[user.role]}}</td>
+            <td>{{user.department}}</td>
+            <td>{{user.email}}</td>
+            <td>{{user.phone_number}}</td>
+            <td>{{user.remarks}}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+<script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+<script type="text/javascript" src="vue.js"></script>
+<script type="text/javascript" src="bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="bootstrap-select-1.12.4/js/bootstrap-select.min.js"></script>
+<script>
+  new Vue({
+    el: '#app',
+    data: {
+      show_user_model: false,
+      is_add_user: true,
+      is_set_user: false,
+      class_name: 'col-md-12',
+      user_name: '',
+      user_password: '',
+      remarks: '',
+      name: '',
+      department: '',
+      email: '',
+      phone_number: '',
+      role: '',
+      selected: 'operator',
+      en: {
+        'admin': '管理员',
+        'auditor': '审计员',
+        'operator': '操作员'
+      },
+      options: [
+        {text: '管理员', value: 'admin'},
+        {text: '审计员', value: 'auditor'},
+        {text: '操作员', value: 'operator'}
+      ],
+      add_user_hint: '',
+      body: [],
+      all_body: [
+        {
+          user_name: 'zhangsan',
+          name: '张三',
+          department: '网研',
+          email: '789456@gmail.com',
+          phone_number: '123456789',
+          remarks: '我是研发',
+          role: 'admin'
+        },
+        {
+          user_name: 'chener',
+          name: '陈二',
+          department: '网研',
+          email: '789456@gmail.com',
+          phone_number: '123456789',
+          remarks: '我是研发',
+          role: 'admin'
+        },
+        {
+          user_name: 'wangwu',
+          name: '王五',
+          department: '客服',
+          email: '789456@gmail.com',
+          phone_number: '123456789',
+          remarks: '我是客服',
+          role: 'auditor'
+        },
+        {
+          user_name: 'lisi',
+          name: '李四',
+          department: '销售',
+          email: '789456@gmail.com',
+          phone_number: '123456789',
+          remarks: '我是销售',
+          role: 'operator'
+        }
+      ]
+    },
+    created: function () {
+      this.body = this.all_body
+    },
+    methods: {
+      submit_user_info: function (data) {
+        if (data == 'set') {
+          var obj = {
+            user_name: this.user_name,
+            user_password: this.user_password,
+            name: this.name,
+            email: this.email,
+            phone_number: this.phone_number,
+            remarks: this.remarks,
+            department: this.department,
+            role: this.selected
+          }
+          this.body.push(obj)
+          this.user_model_switch()
+        } else {
+          if (this.user_name == '') {
+            this.add_user_hint = '用户名不能为空'
+            return false
+          } else if (this.user_password == '') {
+            this.add_user_hint = '密码不能为空'
+            return false
+          } else if (this.name == '') {
+            this.add_user_hint = '姓名不能为空'
+            return false
+          } else {
+            var obj = {
+              user_name: this.user_name,
+              user_password: this.user_password,
+              name: this.name,
+              email: this.email,
+              phone_number: this.phone_number,
+              remarks: this.remarks,
+              department: this.department,
+              role: this.selected
+            }
+            this.body.push(obj)
+            this.user_model_switch()
+          }
+        }
+      },
+      selectpicker_reset: function () {
+        this.$nextTick(function () {
+          $('.selectpicker').selectpicker('refresh');
+        })
+      },
+      delete_user: function () {
+        debugger
+        var name=this.user_name
+        for(var i=0;i<this.body.length;i++){
+          if(this.body[i].user_name==name){
+
+            this.body.splice(i,1)
+            this.user_model_switch()
+          }
+        }
+      },
+      set_user: function (user) {
+        this.is_add_user = false
+        this.is_set_user = true
+        this.show_user_model = true
+        this.class_name = 'col-md-8'
+        this.user_name = user.user_name
+        this.selected = user.role_english
+        this.remarks = user.remarks
+        this.name = user.name
+        this.phone_number = user.phone_number
+        this.selected = user.role
+        this.email = user.email
+        this.role = user.role
+        this.department = user.department
+        this.selectpicker_reset()
+      },
+      user_model_switch: function () {
+        this.user_name = ''
+        this.user_password = ''
+        this.remarks = ''
+        this.name = ''
+        this.department = ''
+        this.email = ''
+        this.phone_number = ''
+        this.add_user_hint = ''
+        this.is_add_user = true
+        this.is_set_user = false
+        if (this.show_user_model) {
+          this.show_user_model = false
+          this.class_name = 'col-md-12'
+        } else {
+          this.show_user_model = true
+          this.class_name = 'col-md-8'
+        }
+      },
+      switch_user: function (user_info) {
+        this.body = []
+        if (user_info == 'all') {
+          this.body = this.all_body
+        }
+        for (var i = 0; i < this.all_body.length; i++) {
+          if (this.all_body[i].role == user_info) {
+            this.body.push(this.all_body[i])
+          }
+        }
+        this.selectpicker_reset()
+      }
+    }
+  })
+
+  $('#nav-tab li a').click(function () {
+    $(this).parent('li').addClass('active')
+    $(this).parent('li').siblings('li').removeClass('active')
+  })
+</script>
+</body>
+</html>
